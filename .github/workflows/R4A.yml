@@ -1,31 +1,44 @@
-name: Build-Padavan-R4A
+
+name: MI-R4A
 
 on: 
   workflow_dispatch:
 
-
+#设置仓库的读写权限
+permissions:
+  contents: write
+env:
+  TZ: Asia/Shanghai
 jobs:
   build:
     runs-on: ubuntu-22.04
-    if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@master
     - name: Initialization environment
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo apt-get update
         sudo apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd fakeroot \
-        cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
+        cpio git python3-docutils gettext automake autopoint texinfo build-essential help2man \
         pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget
+        sudo timedatectl set-timezone Asia/Shanghai
+    - name: Install UPX
+      uses: crazy-max/ghaction-upx@v3
+      with:
+        version: v4.2.4
+        install-only: true
     - name: Clone source code
       env:
         KERNEL: 3.4
       run: |
-        git clone --depth=1 https://github.com/fightroad/Padavan-KVR.git /opt/rt-n56u
+        git clone --depth=1 https://github.com/${GITHUB_REPOSITORY}.git /opt/rt-n56u
         cd /opt/rt-n56u/toolchain-mipsel
         sh dl_toolchain.sh
         mkdir -p /opt/images/
+
     - name: Build Firmware
       env:
         TNAME: MI-R4A
@@ -33,7 +46,7 @@ jobs:
       run: |
         cd /opt/rt-n56u/trunk
         if [ ! -f configs/templates/$TNAME.config ] ; then
-        echo "configs/templates/$TNAME.config not found "
+        echo "configs/templates/$TNAME.config 没有找到 "
         exit 1
         fi
         cp -f configs/templates/$TNAME.config .config
